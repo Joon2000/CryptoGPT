@@ -1,74 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { WagmiConfig, createConfig } from "wagmi";
+import {
+  ConnectKitProvider,
+  ConnectKitButton,
+  getDefaultConfig,
+} from "connectkit";
+import { mainnet, polygon, optimism, arbitrum } from "wagmi/chains";
+import ChatBot from "./component/ChatBot";
 
-export default function Home() {
-  const [streamData, setStreamData] = useState<string>("");
+const config = createConfig(
+  getDefaultConfig({
+    // Required
+    appName: "CryptoGPT",
 
-  const handleChatSubmit = async (e: any) => {
-    e.preventDefault();
-    setStreamData("");
+    // Required API Keys
+    alchemyId: process.env.ALCHEMY_API_KEY,
+    walletConnectProjectId: process.env.WALLETCONNECTCLOUD_PROJECT_ID!,
 
-    const formData = new FormData(e.currentTarget);
-    const response = await fetch("api/chat", {
-      method: "Post",
-      body: JSON.stringify({ prompt: formData.get("prompt") }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    chains: [mainnet, polygon, optimism, arbitrum],
 
-    const reader = response.body!.getReader();
+    // Optional
+    // appDescription: "Your App Description",
+    // appUrl: "https://family.co", // your app's url
+    // appIcon: "https://family.co/logo.png", // your app's icon, no bigger than 1024x1024px (max. 1MB)
+  })
+);
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-
-      const text = new TextDecoder().decode(value);
-      setStreamData((prevData) => prevData + text);
-    }
-  };
-
-  const handleClearChat = () => {
-    setStreamData("");
-  };
-
+const App = () => {
   return (
-    <main className="flex max-w-6xl mx-auto items-center justify-center p-24">
-      <div className="flex flex-col gap-12">
-        <h1 className="text-gray-200 font-extrabold text-6xl">Crypto GPT🔗</h1>
-        <form onSubmit={handleChatSubmit}>
-          <input
-            className="py-2 px-4 rounded-md bg-gray-600 text-white w-full"
-            placeholder="Enter prompt"
-            name="prompt"
-            required
-          ></input>
-          <div className="flex justify-center gap-4 py-4">
-            <button
-              type="submit"
-              className="py-2 px-4 rounded-md text-sm bg-lime-700 text-white hover:opacity-80 transition-opacity"
-            >
-              Send Chat
-            </button>
-            <button
-              onClick={handleClearChat}
-              type="button"
-              className="py-2 px-4 rounded-md text-sm bg-red-700 text-white hover:opacity-80 transition-opacity"
-            >
-              Clear Chat
-            </button>
-          </div>
-        </form>
-        {streamData && (
-          <div>
-            <h3 className="text-2xl text-gray-400">AI Assistant</h3>
-            <p className="text-gray-200 rounded-md">{streamData}</p>
-          </div>
-        )}
-      </div>
-    </main>
+    <WagmiConfig config={config}>
+      <ConnectKitProvider>
+        <ChatBot />
+        <ConnectKitButton />
+      </ConnectKitProvider>
+    </WagmiConfig>
   );
-}
+};
