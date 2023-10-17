@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ConnectKitButton } from "connectkit";
+import { getData } from "../Data/wagmiData";
 
 export default function ChatBot() {
   const [streamData, setStreamData] = useState<string>("");
@@ -35,6 +36,8 @@ export default function ChatBot() {
   const handleClearChat = () => {
     setStreamData("");
   };
+
+  getData();
 
   return (
     <main>
