@@ -1,4 +1,4 @@
-// "use client";
+"use client";
 
 // import { useState } from "react";
 // import { ConnectKitButton } from "connectkit";
@@ -86,7 +86,7 @@
 //   );
 // }
 
-"use client";
+// "use client";
 
 import { useChat } from "ai/react";
 
