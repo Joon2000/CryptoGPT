@@ -26,7 +26,7 @@ export async function POST(req: Request, res: Response) {
     func: async (options) => {
       console.log("Triggered fetchCryptoPrice function with option:", options);
       const { cryptoName, vsCurrency } = options;
-      const url = `https://api.coingecko.com/api/vs/simple/price?ids=${cryptoName}&vs_currencies=${vsCurrency}&x_cg_demo_api_key=${process.env.COINGECKO_API_KEY}`;
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoName}&vs_currencies=${vsCurrency}&x_cg_demo_api_key=${process.env.COINGECKO_API_KEY}`;
       const response = await fetch(url);
       const data = await response.json();
       return data[cryptoName.toLowerCase()][
@@ -51,7 +51,7 @@ export async function POST(req: Request, res: Response) {
   const responseStream = new ReadableStream({
     async start(controller) {
       for (const chunk of chunks) {
-        const bytes = new TextEncoder().encode(chunk + "");
+        const bytes = new TextEncoder().encode(chunk + " ");
         controller.enqueue(bytes);
         await new Promise((r) =>
           setTimeout(r, Math.floor(Math.random() * 20 + 10))
