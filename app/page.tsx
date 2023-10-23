@@ -4,6 +4,7 @@ import { WagmiConfig, createConfig } from "wagmi";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { mainnet, polygon, optimism, arbitrum } from "wagmi/chains";
 import ChatBot from "./component/ChatBot";
+import { useIsMounted } from "./hooks/useIsMounted";
 
 const config = createConfig(
   getDefaultConfig({
@@ -23,10 +24,11 @@ const config = createConfig(
 );
 
 const App = () => {
+  const mounted = useIsMounted();
   return (
     <WagmiConfig config={config}>
       <ConnectKitProvider debugMode>
-        <ChatBot />
+        {mounted && <ChatBot />}
       </ConnectKitProvider>
     </WagmiConfig>
   );
