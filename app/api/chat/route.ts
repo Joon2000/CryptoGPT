@@ -4,10 +4,6 @@ import { initializeAgentExecutorWithOptions } from "langchain/agents";
 import { WikipediaQueryRun } from "langchain/tools";
 import { StreamingTextResponse } from "ai";
 import * as z from "zod";
-import { Address } from "viem";
-import { GetNetworkResult } from "@wagmi/core";
-import { fetchBalanceData, getNetworkData } from "@/app/utils/wagmiFunction";
-import { useAccount } from "wagmi";
 
 export async function POST(req: Request, res: Response) {
   const { prompt, walletData } = await req.json();
@@ -47,26 +43,13 @@ export async function POST(req: Request, res: Response) {
     description: "Fetches the Wallet Data of the user's blockchain wallet",
     func: async () => {
       console.log("Triggered fetchWalletData funciton");
-      return JSON.stringify(walletData);
+      if (walletData) {
+        return JSON.stringify(walletData);
+      } else {
+        return JSON.stringify("Connect your wallet first");
+      }
     },
   });
-
-  // export const getData = async (address: Address | undefined) => {
-  //   try {
-  //     const balance = await fetchBalanceData(address!);
-  //     const formattedBalance = balance.formatted;
-  //     const network = getNetworkData();
-  //     walletData = {
-  //       address: address,
-  //       balance: formattedBalance,
-  //       network: network,
-  //     };
-  //     console.log(walletData);
-  //     // getWalletData(walletData);
-  //   } catch (err) {
-  //     // console.log(err);
-  //   }
-  // };
 
   const tools = [WikipediaQuery, fetchCryptoPrice, fetchWalletData];
 
