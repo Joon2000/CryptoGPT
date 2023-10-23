@@ -4,9 +4,13 @@ import { initializeAgentExecutorWithOptions } from "langchain/agents";
 import { WikipediaQueryRun } from "langchain/tools";
 import { StreamingTextResponse } from "ai";
 import * as z from "zod";
+import { Address } from "viem";
+import { GetNetworkResult } from "@wagmi/core";
+import { fetchBalanceData, getNetworkData } from "@/app/utils/wagmiFunction";
+import { useAccount } from "wagmi";
 
 export async function POST(req: Request, res: Response) {
-  const { messages } = await req.json();
+  const { prompt, walletData } = await req.json();
   const model = new ChatOpenAI({ temperature: 0, streaming: true });
 
   //Temporary Query
@@ -29,19 +33,48 @@ export async function POST(req: Request, res: Response) {
       const url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoName}&vs_currencies=${vsCurrency}&x_cg_demo_api_key=${process.env.COINGECKO_API_KEY}`;
       const response = await fetch(url);
       const data = await response.json();
+      console.log(
+        data[cryptoName.toLowerCase()][vsCurrency.toLowerCase()].toString()
+      );
       return data[cryptoName.toLowerCase()][
         vsCurrency.toLowerCase()
       ].toString();
     },
   });
 
-  const tools = [WikipediaQuery, fetchCryptoPrice];
+  const fetchWalletData = new DynamicTool({
+    name: "fetchWalletData",
+    description: "Fetches the Wallet Data of the user's blockchain wallet",
+    func: async () => {
+      console.log("Triggered fetchWalletData funciton");
+      return JSON.stringify(walletData);
+    },
+  });
+
+  // export const getData = async (address: Address | undefined) => {
+  //   try {
+  //     const balance = await fetchBalanceData(address!);
+  //     const formattedBalance = balance.formatted;
+  //     const network = getNetworkData();
+  //     walletData = {
+  //       address: address,
+  //       balance: formattedBalance,
+  //       network: network,
+  //     };
+  //     console.log(walletData);
+  //     // getWalletData(walletData);
+  //   } catch (err) {
+  //     // console.log(err);
+  //   }
+  // };
+
+  const tools = [WikipediaQuery, fetchCryptoPrice, fetchWalletData];
 
   const executor = await initializeAgentExecutorWithOptions(tools, model, {
     agentType: "openai-functions",
   });
 
-  const input = messages[messages.length - 1].content;
+  const input = prompt;
 
   const result = await executor.run(input);
 
