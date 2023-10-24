@@ -13,38 +13,39 @@ import { HumanMessage, AIMessage } from "langchain/schema";
 export async function POST(req: Request, res: Response) {
   const { prompt, walletData } = await req.json();
 
-  // const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
-  // await client.connect();
-  // const collection = client.db("langchain").collection("memory");
-
-  // // generate a new sessionId string
-  // const sessionId = new ObjectId().toString();
-
-  // const memory = new BufferMemory({
-  //   chatHistory: new MongoDBChatMessageHistory({
-  //     collection,
-  //     sessionId,
-  //   }),
-  // });
-
-  // Assume you have retrieved a JSON object from your database
-  const retrievedJson = [
-    { type: "human", content: "My name's Jonas" },
-    { type: "ai", content: "Nice to meet you, Jonas!" },
-  ];
-
-  // Convert the JSON object to an array of HumanMessage and AIMessage instances
-  const pastMessages = retrievedJson.map((msg) =>
-    msg.type === "human"
-      ? new HumanMessage(msg.content)
-      : new AIMessage(msg.content)
-  );
+  const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
+  await client.connect();
+  const collection = client.db("langchain").collection("memory");
+  // generate a new sessionId string
+  const sessionId = new ObjectId().toString();
 
   const memory = new BufferMemory({
     memoryKey: "chat_history",
     returnMessages: true,
-    chatHistory: new ChatMessageHistory(pastMessages),
+    chatHistory: new MongoDBChatMessageHistory({
+      collection,
+      sessionId,
+    }),
   });
+
+  // // Assume you have retrieved a JSON object from your database
+  // const retrievedJson = [
+  //   { type: "human", content: "My name's Jonas" },
+  //   { type: "ai", content: "Nice to meet you, Jonas!" },
+  // ];
+
+  // // Convert the JSON object to an array of HumanMessage and AIMessage instances
+  // const pastMessages = retrievedJson.map((msg) =>
+  //   msg.type === "human"
+  //     ? new HumanMessage(msg.content)
+  //     : new AIMessage(msg.content)
+  // );
+
+  // const memory = new BufferMemory({
+  //   memoryKey: "chat_history",
+  //   returnMessages: true,
+  //   chatHistory: new ChatMessageHistory(pastMessages),
+  // });
 
   const model = new ChatOpenAI({ temperature: 0, streaming: true });
 
