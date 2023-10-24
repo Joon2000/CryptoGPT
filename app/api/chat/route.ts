@@ -123,12 +123,12 @@ export async function POST(req: Request, res: Response) {
   });
 
   // Add a new user message and update the database
-  const userMessage = new HumanMessage("Hello!");
+  const userMessage = new HumanMessage(prompt);
   await memory.addUserMessage(userMessage);
   await updateDatabase(userMessage);
 
   // Add a new AI message and update the database
-  const aiMessage = new AIMessage("Hi there!");
+  const aiMessage = new AIMessage(result);
   await memory.addAIChatMessage(aiMessage);
   await updateDatabase(aiMessage);
 
