@@ -41,6 +41,8 @@ export async function POST(req: Request, res: Response) {
   );
 
   const memory = new BufferMemory({
+    memoryKey: "chat_history",
+    returnMessages: true,
     chatHistory: new ChatMessageHistory(pastMessages),
   });
 
