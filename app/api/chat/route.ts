@@ -18,7 +18,7 @@ export async function POST(req: Request, res: Response) {
   const collection = client.db("langchain").collection("memory");
   // generate a new sessionId string
   const sessionId = new ObjectId().toString();
-
+  console.log(sessionId);
   const memory = new BufferMemory({
     memoryKey: "chat_history",
     returnMessages: true,
@@ -121,6 +121,16 @@ export async function POST(req: Request, res: Response) {
       controller.close();
     },
   });
+
+  // Add a new user message and update the database
+  const userMessage = new HumanMessage("Hello!");
+  await memory.addUserMessage(userMessage);
+  await updateDatabase(userMessage);
+
+  // Add a new AI message and update the database
+  const aiMessage = new AIMessage("Hi there!");
+  await memory.addAIChatMessage(aiMessage);
+  await updateDatabase(aiMessage);
 
   // // See the chat history in the MongoDb
   // console.log(await memory.chatHistory.getMessages());
