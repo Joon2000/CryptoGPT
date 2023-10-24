@@ -16,9 +16,9 @@ export async function POST(req: Request, res: Response) {
   const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
   await client.connect();
   const collection = client.db("langchain").collection("memory");
+
   // generate a new sessionId string
-  const sessionId = new ObjectId().toString();
-  console.log(sessionId);
+  const sessionId = "6537a83f2c376600f93beb6f";
   const memory = new BufferMemory({
     memoryKey: "chat_history",
     returnMessages: true,
@@ -122,18 +122,18 @@ export async function POST(req: Request, res: Response) {
     },
   });
 
-  // Add a new user message and update the database
-  const userMessage = new HumanMessage(prompt);
-  await memory.addUserMessage(userMessage);
-  await updateDatabase(userMessage);
+  // // Add a new user message and update the database
+  // const userMessage = new HumanMessage(prompt);
+  // await memory.addUserMessage(userMessage);
+  // await updateDatabase(userMessage);
 
-  // Add a new AI message and update the database
-  const aiMessage = new AIMessage(result);
-  await memory.addAIChatMessage(aiMessage);
-  await updateDatabase(aiMessage);
+  // // Add a new AI message and update the database
+  // const aiMessage = new AIMessage(result);
+  // await memory.addAIChatMessage(aiMessage);
+  // await updateDatabase(aiMessage);
 
-  // // See the chat history in the MongoDb
-  // console.log(await memory.chatHistory.getMessages());
+  // See the chat history in the MongoDb
+  console.log(await memory.chatHistory.getMessages());
 
   // // clear chat history
   // await memory.chatHistory.clear();
