@@ -5,17 +5,23 @@ import { getData } from "../Data/wagmiData";
 import { useAccount } from "wagmi";
 import { SetStateAction, useState } from "react";
 
+interface ConversationItem {
+  type: "human" | "ai";
+  content: string;
+}
+
 export default function ChatBot() {
   const { address } = useAccount();
 
-  const [chatOutput, setChatOutput] = useState<string>("");
+  const [chatOutput, setChatOutput] = useState<ConversationItem[]>([]);
+  const [chatInput, setChatInput] = useState<string>("");
 
   const handleChatSubmit = async (e: {
     preventDefault: () => void;
     currentTarget: HTMLFormElement | undefined;
   }) => {
     e.preventDefault();
-    setChatOutput("");
+    setChatOutput([]);
 
     const formData = new FormData(e.currentTarget);
     const walletData = await getData(address);
@@ -31,25 +37,20 @@ export default function ChatBot() {
       },
     });
 
-    const reader = response.body!.getReader();
-
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        break;
-      }
-
-      const text = new TextDecoder().decode(value);
-      setChatOutput((prevData) => prevData + text);
+    try {
+      const chat = await response.json();
+      setChatOutput(chat);
+    } catch (err) {
+      console.log(err);
     }
+
+    setChatInput("");
   };
 
-  const handleInputChange = (e: {
-    target: { value: SetStateAction<string> };
-  }) => {
-    setChatOutput(e.target.value);
+  const handleChange = (e: { target: { value: SetStateAction<string> } }) => {
+    if (e) setChatInput(e.target.value);
   };
+
   return (
     <main>
       <div className="flex justify-end mt-10 mr-6">
@@ -61,19 +62,20 @@ export default function ChatBot() {
             Crypto GPT🔗
           </h1>
           <div className="mx-auto w-full max-w-md py-24 flex flex-col stretch">
-            {chatOutput}
-            {/* {messages.length > 0
-              ? messages.map((m) => (
-                  <div key={m.id} className="whitespace-pre-wrap">
-                    {m.role === "user" ? "User: " : "AI: "}
+            {chatOutput.length > 0
+              ? chatOutput.map((m, index) => (
+                  <div key={index} className="whitespace-pre-wrap">
+                    {m.type === "human" ? "User: " : "AI: "}
                     {m.content}
                   </div>
                 ))
-              : null} */}
+              : null}
           </div>
           <form onSubmit={handleChatSubmit}>
             <input
               className="py-2 px-4 rounded-md bg-gray-600 text-white w-full"
+              value={chatInput}
+              onChange={handleChange}
               placeholder="Enter prompt"
               name="prompt"
               required

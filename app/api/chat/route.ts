@@ -1,3 +1,4 @@
+import { AIMessage, HumanMessage } from "langchain/schema";
 import { DynamicTool, DynamicStructuredTool } from "langchain/tools";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { initializeAgentExecutorWithOptions } from "langchain/agents";
@@ -7,8 +8,6 @@ import * as z from "zod";
 import { MongoClient, ObjectId } from "mongodb";
 import { BufferMemory } from "langchain/memory";
 import { MongoDBChatMessageHistory } from "langchain/stores/message/mongodb";
-import { ChatMessageHistory } from "langchain/memory";
-import { HumanMessage, AIMessage } from "langchain/schema";
 
 export async function POST(req: Request, res: Response) {
   const { prompt, walletData } = await req.json();
@@ -18,7 +17,9 @@ export async function POST(req: Request, res: Response) {
   const collection = client.db("langchain").collection("memory");
 
   // generate a new sessionId string
-  const sessionId = "6537a83f2c376600f93beb6f";
+  const sessionId = "6537a7401f81166fa9685001";
+  //   const sessionId = new ObjectId().toString();
+
   const memory = new BufferMemory({
     memoryKey: "chat_history",
     returnMessages: true,
@@ -27,25 +28,6 @@ export async function POST(req: Request, res: Response) {
       sessionId,
     }),
   });
-
-  // // Assume you have retrieved a JSON object from your database
-  // const retrievedJson = [
-  //   { type: "human", content: "My name's Jonas" },
-  //   { type: "ai", content: "Nice to meet you, Jonas!" },
-  // ];
-
-  // // Convert the JSON object to an array of HumanMessage and AIMessage instances
-  // const pastMessages = retrievedJson.map((msg) =>
-  //   msg.type === "human"
-  //     ? new HumanMessage(msg.content)
-  //     : new AIMessage(msg.content)
-  // );
-
-  // const memory = new BufferMemory({
-  //   memoryKey: "chat_history",
-  //   returnMessages: true,
-  //   chatHistory: new ChatMessageHistory(pastMessages),
-  // });
 
   const model = new ChatOpenAI({ temperature: 0, streaming: true });
 
@@ -106,110 +88,43 @@ export async function POST(req: Request, res: Response) {
 
   const result = await executor.run(input);
 
-  const chunks = result.split(" ");
+  // const chunks = result.split(" ");
 
   //mimicing streaming
-  const responseStream = new ReadableStream({
-    async start(controller) {
-      for (const chunk of chunks) {
-        const bytes = new TextEncoder().encode(chunk + " ");
-        controller.enqueue(bytes);
-        await new Promise((r) =>
-          setTimeout(r, Math.floor(Math.random() * 20 + 10))
-        );
-      }
-      controller.close();
-    },
-  });
-
-  // // Add a new user message and update the database
-  // const userMessage = new HumanMessage(prompt);
-  // await memory.addUserMessage(userMessage);
-  // await updateDatabase(userMessage);
-
-  // // Add a new AI message and update the database
-  // const aiMessage = new AIMessage(result);
-  // await memory.addAIChatMessage(aiMessage);
-  // await updateDatabase(aiMessage);
+  // const responseStream = new ReadableStream({
+  //   async start(controller) {
+  //     for (const chunk of chunks) {
+  //       const bytes = new TextEncoder().encode(chunk + " ");
+  //       controller.enqueue(bytes);
+  //       await new Promise((r) =>
+  //         setTimeout(r, Math.floor(Math.random() * 20 + 10))
+  //       );
+  //     }
+  //     controller.close();
+  //   },
+  // });
 
   // See the chat history in the MongoDb
-  console.log(await memory.chatHistory.getMessages());
+  const chatMemory = await memory.chatHistory.getMessages();
+
+  const formattedChatMemory = chatMemory.map((message) => {
+    if (message instanceof HumanMessage) {
+      return { type: "human", content: message.content };
+    } else if (message instanceof AIMessage) {
+      return { type: "ai", content: message.content };
+    }
+  });
 
   // // clear chat history
   // await memory.chatHistory.clear();
 
-  return new StreamingTextResponse(responseStream);
+  const responseBody = JSON.stringify(formattedChatMemory);
+
+  const response = new Response(responseBody, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  return response;
 }
-
-// export async function POST(req: Request, res: Response) {
-//   const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
-//   await client.connect();
-//   const collection = client.db("langchain").collection("memory");
-
-//   // generate a new sessionId string
-//   const sessionId = new ObjectId().toString();
-
-//   const memory = new BufferMemory({
-//     chatHistory: new MongoDBChatMessageHistory({
-//       collection,
-//       sessionId,
-//     }),
-//   });
-//   // Assume you have retrieved a JSON object from your database
-//   const retrievedJson = [
-//     { type: "human", content: "My name's Jonas" },
-//     { type: "ai", content: "Nice to meet you, Jonas!" },
-//   ];
-
-//   // Convert the JSON object to an array of HumanMessage and AIMessage instances
-//   const pastMessages = retrievedJson.map((msg) =>
-//     msg.type === "human"
-//       ? new HumanMessage(msg.content)
-//       : new AIMessage(msg.content)
-//   );
-
-//   // Load the messages into a new ChatMessageHistory instance
-//   const chatHistory = new ChatMessageHistory(pastMessages);
-
-//   // // Create a new BufferMemory instance with the chat history
-//   // const memory = new BufferMemory({
-//   //   chatHistory: chatHistory,
-//   // });
-
-//   // Function to update the database
-//   async function updateDatabase(message: HumanMessage | AIMessage) {
-//     // Convert the message to a JSON object
-//     const messageJson = {
-//       type: message.constructor.name,
-//       content: message.content,
-//     };
-
-//     // Write the JSON object to your database
-//     // This is a placeholder, replace it with your actual database write operation
-//     await yourDatabase.write(messageJson);
-//   }
-
-//   const model = new ChatOpenAI({
-//     modelName: "gpt-3.5-turbo",
-//     temperature: 0,
-//   });
-
-//   const chain = new ConversationChain({ llm: model, memory });
-
-//   const { messages } = await req.json();
-
-//   const input = messages[messages.length - 1].content;
-
-//   const res3 = await chain.call({ input: input });
-//   console.log(res3.response);
-
-//   // Add a new user message and update the database
-//   const userMessage = new HumanMessage("Hello!");
-//   await memory.addUserMessage(userMessage);
-//   await updateDatabase(userMessage);
-
-//   // Add a new AI message and update the database
-//   const aiMessage = new AIMessage("Hi there!");
-//   await memory.addAIChatMessage(aiMessage);
-//   await updateDatabase(aiMessage);
-// }
