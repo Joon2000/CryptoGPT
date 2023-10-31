@@ -16,6 +16,8 @@ export const MessagesContext = createContext<{
   removeMessage: (id: string) => void;
   updateMessage: (id: string, updateFn: (prevText: string) => string) => void;
   setIsMessageUpdating: (isUpdating: boolean) => void;
+  sessionId: string;
+  updateSessionId: (id: string) => void;
 }>({
   messages: [],
   isMessageUpdating: false,
@@ -23,11 +25,14 @@ export const MessagesContext = createContext<{
   removeMessage: () => {},
   updateMessage: () => {},
   setIsMessageUpdating: () => {},
+  sessionId: "",
+  updateSessionId: () => {},
 });
 
 export function MessagesProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState(defaultValue);
   const [isMessageUpdating, setIsMessageUpdating] = useState<boolean>(false);
+  const [sessionId, setSessionId] = useState<string>("");
 
   const addMessage = (message: Message) => {
     setMessages((prev) => [...prev, message]);
@@ -51,6 +56,10 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const updateSessionId = (id: string) => {
+    setSessionId(id);
+  };
+
   return (
     <MessagesContext.Provider
       value={{
@@ -60,6 +69,8 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
         removeMessage,
         updateMessage,
         setIsMessageUpdating,
+        sessionId,
+        updateSessionId,
       }}
     >
       {children}
