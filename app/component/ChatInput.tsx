@@ -11,6 +11,7 @@ import { toast } from "react-hot-toast";
 import TextareaAutosize from "react-textarea-autosize";
 import { useAccount } from "wagmi";
 import { getData } from "../Data/wagmiData";
+import { getSessionId } from "../utils/getSessionId";
 
 interface ChatInputProps extends HTMLAttributes<HTMLDivElement> {}
 
@@ -25,13 +26,22 @@ const ChatInput: FC<ChatInputProps> = ({ className, ...props }) => {
     removeMessage,
     updateMessage,
     setIsMessageUpdating,
+    sessionId,
+    updateSessionId,
   } = useContext(MessagesContext);
 
   const { mutate: sendMessage, isLoading } = useMutation({
     mutationKey: ["sendMessage"],
     // include message to later use it in onMutate
     mutationFn: async (_message: Message) => {
+      let newSessionId = "";
+      if (sessionId === "") {
+        newSessionId = await getSessionId();
+        updateSessionId(newSessionId);
+      }
+
       const walletData = await getData(address);
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -40,6 +50,7 @@ const ChatInput: FC<ChatInputProps> = ({ className, ...props }) => {
         body: JSON.stringify({
           prompt: messages[messages.length - 1].text,
           walletData: walletData,
+          sessionId: sessionId || newSessionId,
         }),
       });
 
