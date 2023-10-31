@@ -9,17 +9,17 @@ import { MongoClient, ObjectId } from "mongodb";
 import { BufferMemory } from "langchain/memory";
 import { MongoDBChatMessageHistory } from "langchain/stores/message/mongodb";
 import { StreamingTextResponse } from "ai";
+import {
+  fetchCryptoPriceDescription,
+  fetchWalletDataDescription,
+} from "@/app/helper/constants/description";
 
 export async function POST(req: Request, res: Response) {
-  const { prompt, walletData } = await req.json();
+  const { prompt, walletData, sessionId } = await req.json();
 
   const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
   await client.connect();
   const collection = client.db("langchain").collection("memory");
-
-  // generate a new sessionId string
-  const sessionId = "6537a7401f81166fa9685001";
-  //   const sessionId = new ObjectId().toString();
 
   const memory = new BufferMemory({
     memoryKey: "chat_history",
@@ -41,7 +41,7 @@ export async function POST(req: Request, res: Response) {
   //Temporary dynamic Tool
   const fetchCryptoPrice = new DynamicStructuredTool({
     name: "fetchCryptoPrice",
-    description: "Fetches the current price of a specified cryptocurrency",
+    description: fetchCryptoPriceDescription,
     schema: z.object({
       cryptoName: z.string(),
       vsCurrency: z.string().optional().default("USD"),
@@ -63,7 +63,7 @@ export async function POST(req: Request, res: Response) {
 
   const fetchWalletData = new DynamicTool({
     name: "fetchWalletData",
-    description: "Fetches the Wallet Data of the user's blockchain wallet",
+    description: fetchWalletDataDescription,
     func: async () => {
       console.log("Triggered fetchWalletData funciton");
       if (walletData) {
