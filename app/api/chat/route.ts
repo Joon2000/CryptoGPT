@@ -1,13 +1,14 @@
+// import { Message } from "../lib/validators/message";
 import { AIMessage, HumanMessage } from "langchain/schema";
 import { DynamicTool, DynamicStructuredTool } from "langchain/tools";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { initializeAgentExecutorWithOptions } from "langchain/agents";
 import { WikipediaQueryRun } from "langchain/tools";
-import { StreamingTextResponse } from "ai";
 import * as z from "zod";
 import { MongoClient, ObjectId } from "mongodb";
 import { BufferMemory } from "langchain/memory";
 import { MongoDBChatMessageHistory } from "langchain/stores/message/mongodb";
+import { StreamingTextResponse } from "ai";
 
 export async function POST(req: Request, res: Response) {
   const { prompt, walletData } = await req.json();
@@ -78,47 +79,48 @@ export async function POST(req: Request, res: Response) {
   const executor = await initializeAgentExecutorWithOptions(tools, model, {
     agentType: "openai-functions",
     memory: memory,
-    // returnIntermediateSteps: true,
-    // agentArgs: {
-    //   prefix: `Do your best to answer the questions. Feel free to use any tools available to look up relevant information, only if necessary.`,
-    // },
+    agentArgs: {
+      prefix: `Do your best to answer the questions. Feel free to use any tools available to look up relevant information, only if necessary.`,
+    },
   });
 
   const input = prompt;
 
   const result = await executor.run(input);
 
-  // const chunks = result.split(" ");
-
-  //mimicing streaming
-  // const responseStream = new ReadableStream({
-  //   async start(controller) {
-  //     for (const chunk of chunks) {
-  //       const bytes = new TextEncoder().encode(chunk + " ");
-  //       controller.enqueue(bytes);
-  //       await new Promise((r) =>
-  //         setTimeout(r, Math.floor(Math.random() * 20 + 10))
-  //       );
-  //     }
-  //     controller.close();
-  //   },
-  // });
-
   // See the chat history in the MongoDb
-  const chatMemory = await memory.chatHistory.getMessages();
+  // const chatMemory = await memory.chatHistory.getMessages();
 
-  const formattedChatMemory = chatMemory.map((message) => {
-    if (message instanceof HumanMessage) {
-      return { type: "human", content: message.content };
-    } else if (message instanceof AIMessage) {
-      return { type: "ai", content: message.content };
-    }
-  });
+  // const formattedChatMemory = chatMemory.map((message) => {
+  //   if (message instanceof HumanMessage) {
+  //     return { type: "human", content: message.content };
+  //   } else if (message instanceof AIMessage) {
+  //     return { type: "ai", content: message.content };
+  //   }
+  // });
 
   // // clear chat history
   // await memory.chatHistory.clear();
 
-  const responseBody = JSON.stringify(formattedChatMemory);
+  // const mimickStreaming = (sentence: string) => {
+  //   const chunks = sentence.split(" ");
+
+  //   //   mimicing streaming
+  //   const responseStream = new ReadableStream({
+  //     async start(controller) {
+  //       for (const chunk of chunks) {
+  //         const bytes = new TextEncoder().encode(chunk + " ");
+  //         controller.enqueue(bytes);
+  //         await new Promise((r) =>
+  //           setTimeout(r, Math.floor(Math.random() * 20 + 10))
+  //         );
+  //       }
+  //       controller.close();
+  //     },
+  //   });
+  // };
+
+  const responseBody = JSON.stringify(result);
 
   const response = new Response(responseBody, {
     headers: {
