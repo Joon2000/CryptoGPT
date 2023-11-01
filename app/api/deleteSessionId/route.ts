@@ -7,10 +7,8 @@ export async function POST(req: Request, res: Response) {
     const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
     await client.connect();
     try {
-      client
-        .db("langchain")
-        .collection("memory")
-        .deleteOne({ _id: ObjectId(sessionId) });
+      client.db("langchain").collection("memory");
+      // .deleteOne({ _id: ObjectId(sessionId) });
       message = "SessionId(" + sessionId + ") is deleted";
     } catch (err) {
       console.log(err);
