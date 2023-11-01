@@ -12,6 +12,7 @@ import TextareaAutosize from "react-textarea-autosize";
 import { useAccount } from "wagmi";
 import { getData } from "../Data/wagmiData";
 import { getSessionId } from "../utils/getSessionId";
+import { deleteSessionId } from "../utils/deleteSessionId";
 
 interface ChatInputProps extends HTMLAttributes<HTMLDivElement> {}
 
@@ -29,6 +30,11 @@ const ChatInput: FC<ChatInputProps> = ({ className, ...props }) => {
     sessionId,
     updateSessionId,
   } = useContext(MessagesContext);
+  const handleDelete = () => {
+    deleteSessionId(sessionId);
+  };
+
+  // window.addEventListener("beforeunload", () => deleteSessionId(sessionId));
 
   const { mutate: sendMessage, isLoading } = useMutation({
     mutationKey: ["sendMessage"],
@@ -144,6 +150,7 @@ const ChatInput: FC<ChatInputProps> = ({ className, ...props }) => {
           aria-hidden="true"
         />
       </div>
+      <button onClick={handleDelete}>dlete</button>
     </div>
   );
 };
