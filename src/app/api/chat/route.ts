@@ -12,7 +12,7 @@ import { MongoDBChatMessageHistory } from "langchain/stores/message/mongodb";
 import {
   fetchCryptoPriceDescription,
   fetchWalletDataDescription,
-} from "@/app/helper/constants/description";
+} from "../../../helper/constants/description";
 
 export async function POST(req: Request, res: Response) {
   const { prompt, walletData, sessionId } = await req.json();

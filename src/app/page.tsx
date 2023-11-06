@@ -3,9 +3,8 @@
 import { WagmiConfig, createConfig } from "wagmi";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { mainnet, polygon, optimism, arbitrum } from "wagmi/chains";
-import ChatBot from "./component/ChatBot";
-import { useIsMounted } from "./hooks/useIsMounted";
-
+import ChatBot from "../components/ChatBot";
+import { useIsMounted } from "../hooks/useIsMounted";
 const config = createConfig(
   getDefaultConfig({
     // Required
