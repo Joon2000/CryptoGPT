@@ -1,3 +1,4 @@
+import { StreamingTextResponse } from "ai";
 // import { Message } from "../lib/validators/message";
 import { AIMessage, HumanMessage } from "langchain/schema";
 import { DynamicTool, DynamicStructuredTool } from "langchain/tools";
@@ -8,11 +9,10 @@ import * as z from "zod";
 import { MongoClient, ObjectId } from "mongodb";
 import { BufferMemory } from "langchain/memory";
 import { MongoDBChatMessageHistory } from "langchain/stores/message/mongodb";
-import { StreamingTextResponse } from "ai";
 import {
   fetchCryptoPriceDescription,
   fetchWalletDataDescription,
-} from "@/app/helper/constants/description";
+} from "../../../helper/constants/description";
 
 export async function POST(req: Request, res: Response) {
   const { prompt, walletData, sessionId } = await req.json();
@@ -102,31 +102,22 @@ export async function POST(req: Request, res: Response) {
   // // clear chat history
   // await memory.chatHistory.clear();
 
-  // const mimickStreaming = (sentence: string) => {
-  //   const chunks = sentence.split(" ");
+  const chunks = result.split(" ");
 
-  //   //   mimicing streaming
-  //   const responseStream = new ReadableStream({
-  //     async start(controller) {
-  //       for (const chunk of chunks) {
-  //         const bytes = new TextEncoder().encode(chunk + " ");
-  //         controller.enqueue(bytes);
-  //         await new Promise((r) =>
-  //           setTimeout(r, Math.floor(Math.random() * 20 + 10))
-  //         );
-  //       }
-  //       controller.close();
-  //     },
-  //   });
-  // };
-
-  const responseBody = JSON.stringify(result);
-
-  const response = new Response(responseBody, {
-    headers: {
-      "Content-Type": "application/json",
+  //   mimicing streaming
+  const responseStream = new ReadableStream({
+    async start(controller) {
+      for (const chunk of chunks) {
+        const bytes = new TextEncoder().encode(chunk + " ");
+        controller.enqueue(bytes);
+        await new Promise((r) =>
+          setTimeout(r, Math.floor(Math.random() * 20 + 10))
+        );
+      }
+      controller.close();
     },
   });
 
-  return response;
+  return new StreamingTextResponse(responseStream);
+  // return new Response(result);
 }

@@ -1,5 +1,5 @@
 import { Address, FetchBalanceResult, GetNetworkResult } from "@wagmi/core";
-import { fetchBalanceData, getNetworkData } from "./../utils/wagmiFunction";
+import { fetchBalanceData, getNetworkData } from "../utils/wagmiFunction";
 
 export const getData = async (address: Address | undefined) => {
   try {
