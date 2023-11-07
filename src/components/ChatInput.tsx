@@ -31,8 +31,8 @@ const ChatInput: FC<ChatInputProps> = ({ className, ...props }) => {
     updateSessionId,
   } = useContext(MessagesContext);
 
-  window.onbeforeunload = () => {
-    deleteSessionId(sessionId);
+  window.onbeforeunload = async () => {
+    await deleteSessionId(sessionId);
   };
 
   const { mutate: sendMessage, isLoading } = useMutation({
