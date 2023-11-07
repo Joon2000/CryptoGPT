@@ -30,7 +30,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({ className, ...props }) => {
             >
               <div
                 className={cn(
-                  "flex flex-col space-y-2 text-sm max-w-xs mx-2 overflow-x-hidden",
+                  "flex flex-col space-y-2 text-sm max-w-md mx-2 overflow-x-hidden",
                   {
                     "order-1 items-end": message.isUserMessage,
                     "order-2 items-start": !message.isUserMessage,
