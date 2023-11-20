@@ -10,9 +10,16 @@ import { MongoClient, ObjectId } from "mongodb";
 import { BufferMemory } from "langchain/memory";
 import { MongoDBChatMessageHistory } from "langchain/stores/message/mongodb";
 import {
+  fetchAccountDescription,
+  fetchContractDescription,
   fetchCryptoPriceDescription,
+  fetchEstimatedTimeDescription,
+  fetchGasOracleDescription,
+  fetchLatestBlockNumberDescription,
+  fetchTransactionDescription,
   fetchWalletDataDescription,
 } from "../../../helper/constants/description";
+import { formatEther } from "viem";
 
 export async function POST(req: Request, res: Response) {
   const { prompt, walletData, sessionId } = await req.json();
@@ -61,6 +68,163 @@ export async function POST(req: Request, res: Response) {
     },
   });
 
+  const fetchAccount = new DynamicStructuredTool({
+    name: "fetchAccount",
+    description: fetchAccountDescription,
+    schema: z.object({
+      address: z.string(),
+    }),
+    func: async (options) => {
+      console.log("Triggered fetchAccount function with option:", options);
+      const { address } = options;
+      const url = `https://api.etherscan.io/api?module=account&action=balancemulti&address=${address}&tag=latest&apikey=${process.env.ETHERSCAN_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      const balance = formatEther(data.result[0].balance.toString());
+      const moreInfo = `https://etherscan.io/address/${address}`;
+      if (data) {
+        console.log(balance, moreInfo);
+        return `balance: ${balance}, info: ${moreInfo}`;
+      } else {
+        console.log("No address in EtherScan");
+        return "No address in EtherScan";
+      }
+    },
+  });
+
+  const fetchContract = new DynamicStructuredTool({
+    name: "fetchContract",
+    description: fetchContractDescription,
+    schema: z.object({
+      address: z.string(),
+    }),
+    func: async (options) => {
+      console.log("Triggered fetchContract function with option:", options);
+      const { address } = options;
+      const url = `https://api.etherscan.io/api?module=contract&action=getcontractcreation&contractaddresses=${address}&apikey=${process.env.ETHERSCAN_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data) {
+        const creator = data.result[0].contractCreator.toString();
+        const txHash = data.result[0].txHash.toString();
+        const moreInfo = `https://etherscan.io/tx/${address}`;
+        console.log("creator: ", creator, ", txHash: ", txHash);
+        return `contactcreator: ${creator}, txHash: ${txHash}, info: ${moreInfo}`;
+      } else {
+        console.log("No such contract address in EtherScan");
+        return "No such contract address in EtherScan";
+      }
+    },
+  });
+
+  const fetchTransaction = new DynamicStructuredTool({
+    name: "fetchTransaction",
+    description: fetchTransactionDescription,
+    schema: z.object({
+      txHash: z.string(),
+    }),
+    func: async (options) => {
+      console.log("Triggered fetchTransaction function with option:", options);
+      const { txHash } = options;
+      const url = `https://api.etherscan.io/api?module=proxy&action=eth_getTransactionByHash&txhash=${txHash}&apikey=${process.env.ETHERSCAN_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data) {
+        const blockNumber = data.result.blockNumber.toString();
+        const from = data.result.from.toString();
+        const to = data.result.to.toString();
+        const value = formatEther(
+          BigInt(parseInt(data.result.value.toString(), 16))
+        );
+        const gasLimit = data.result.gas.toString();
+        const gasPrice = data.result.gasPrice.toString();
+        const transactionFee = parseInt(gasLimit, 16) * parseInt(gasPrice, 16);
+        const moreInfo = `https://etherscan.io/tx/${txHash}`;
+        console.log(
+          `blockNumber: ${blockNumber} from: ${from} to: ${to} value: ${value} transactionFee: ${transactionFee}`
+        );
+        return `blockNumber: ${blockNumber} from: ${from} to: ${to} value: ${value} transactionFee: ${transactionFee} moreInfo: ${moreInfo}`;
+      } else {
+        console.log("No such transaction tsxHash in EtherScan");
+        return "No such transactin tsxHash in EtherScan";
+      }
+    },
+  });
+
+  const fetchLatestBlockNumber = new DynamicTool({
+    name: "fetchLatestBlockNumber",
+    description: fetchLatestBlockNumberDescription,
+    func: async () => {
+      console.log("Triggered fetchLatestBlockNumber funciton");
+      const url = `https://api.etherscan.io/api?module=proxy&action=eth_blockNumber&apikey=${process.env.ETHERSCAN_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data) {
+        const blockNumber = parseInt(data.result, 16);
+        const moreInfo = `https://etherscan.io/block/${blockNumber}`;
+        const caution = "The data could not be the latest";
+        console.log(`blockNumber: ${blockNumber}`);
+        return `blockNumber: ${blockNumber} moreInfo: ${moreInfo} caution: ${caution}`;
+      } else {
+        return "Error";
+      }
+    },
+  });
+
+  // 입력값의 wei gwei 변환 필요
+
+  // const fetchEstimatedTime = new DynamicStructuredTool({
+  //   name: "fetchEstimatedTime",
+  //   description: fetchEstimatedTimeDescription,
+  //   schema: z.object({
+  //     gasPrice: z.string(),
+  //   }),
+  //   func: async (options) => {
+  //     console.log(
+  //       "Triggered fetchEstimatedTime function with option:",
+  //       options
+  //     );
+  //     const { gasPrice } = options;
+  //     const url = `https://api.etherscan.io/api?module=gastracker&action=gasestimate&gasprice=${gasPrice}&apikey=${process.env.ETHERSCAN_API_KEY}`;
+  //     const response = await fetch(url);
+  //     const data = await response.json();
+  //     if (data) {
+  //       const time = data.result;
+  //       console.log(`estimatedTime: ${time} seconds`);
+  //       return `estimatedTime: ${time}seconds`;
+  //     } else {
+  //       console.log("Error");
+  //       return "Error";
+  //     }
+  //   },
+  // });
+
+  const fetchGasOracle = new DynamicTool({
+    name: "fetchGasOracle",
+    description: fetchGasOracleDescription,
+    func: async () => {
+      console.log("Triggered fetchGasOracle funciton");
+      const url = `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${process.env.ETHERSCAN_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data) {
+        const lastBlock = parseInt(data.result.LastBlock, 16);
+        const safeGasPrice = data.result.SafeGasPrice;
+        const proposeGasPrice = data.result.ProposeGasPrice;
+        const fastGasPrice = data.result.FastGasPrice;
+        const suggestBaseFee = data.result.SuggestBaseFee;
+        const moreInfo = `https://etherscan.io/gastracker`;
+        const caution = "The data could not be the latest";
+        console.log(
+          `lastBlock: ${lastBlock} safeGasPrice: ${safeGasPrice}, proposeGasPrice: ${proposeGasPrice}, fastGasPrice: ${fastGasPrice}, suggestBaseFee: ${suggestBaseFee}`
+        );
+        return `lastBlock: ${lastBlock} safeGasPrice: ${safeGasPrice}, proposeGasPrice: ${proposeGasPrice}, fastGasPrice: ${fastGasPrice}, suggestBaseFee: ${suggestBaseFee}, caution: ${caution}, moreInfo: ${moreInfo}`;
+      } else {
+        return "Error";
+      }
+    },
+  });
+
   const fetchWalletData = new DynamicTool({
     name: "fetchWalletData",
     description: fetchWalletDataDescription,
@@ -74,7 +238,16 @@ export async function POST(req: Request, res: Response) {
     },
   });
 
-  const tools = [WikipediaQuery, fetchCryptoPrice, fetchWalletData];
+  const tools = [
+    WikipediaQuery,
+    fetchCryptoPrice,
+    fetchWalletData,
+    fetchAccount,
+    fetchContract,
+    fetchTransaction,
+    fetchLatestBlockNumber,
+    fetchGasOracle,
+  ];
 
   const executor = await initializeAgentExecutorWithOptions(tools, model, {
     agentType: "openai-functions",
@@ -87,20 +260,6 @@ export async function POST(req: Request, res: Response) {
   const input = prompt;
 
   const result = await executor.run(input);
-
-  // See the chat history in the MongoDb
-  // const chatMemory = await memory.chatHistory.getMessages();
-
-  // const formattedChatMemory = chatMemory.map((message) => {
-  //   if (message instanceof HumanMessage) {
-  //     return { type: "human", content: message.content };
-  //   } else if (message instanceof AIMessage) {
-  //     return { type: "ai", content: message.content };
-  //   }
-  // });
-
-  // // clear chat history
-  // await memory.chatHistory.clear();
 
   const chunks = result.split(" ");
 
@@ -119,5 +278,4 @@ export async function POST(req: Request, res: Response) {
   });
 
   return new StreamingTextResponse(responseStream);
-  // return new Response(result);
 }
