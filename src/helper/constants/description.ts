@@ -15,3 +15,9 @@ export const fetchTransactionDescription =
 
 export const fetchLatestBlockNumberDescription =
   "fetches latstest block number of ethereum network.";
+
+export const fetchEstimatedTimeDescription =
+  "fetches estimation of confirmation time when gas price is given, unit is second";
+
+export const fetchGasOracleDescription =
+  "fetches latest gas prices of ethereum network.It contains Latest Ethereum BLock's SafeGasPrice, ProposeGasPrice, FastGasPrice, SuggestBaseFee and the units are Gwei. Show the url too";

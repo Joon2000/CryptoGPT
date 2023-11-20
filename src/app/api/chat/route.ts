@@ -13,6 +13,8 @@ import {
   fetchAccountDescription,
   fetchContractDescription,
   fetchCryptoPriceDescription,
+  fetchEstimatedTimeDescription,
+  fetchGasOracleDescription,
   fetchLatestBlockNumberDescription,
   fetchTransactionDescription,
   fetchWalletDataDescription,
@@ -169,6 +171,60 @@ export async function POST(req: Request, res: Response) {
     },
   });
 
+  // 입력값의 wei gwei 변환 필요
+
+  // const fetchEstimatedTime = new DynamicStructuredTool({
+  //   name: "fetchEstimatedTime",
+  //   description: fetchEstimatedTimeDescription,
+  //   schema: z.object({
+  //     gasPrice: z.string(),
+  //   }),
+  //   func: async (options) => {
+  //     console.log(
+  //       "Triggered fetchEstimatedTime function with option:",
+  //       options
+  //     );
+  //     const { gasPrice } = options;
+  //     const url = `https://api.etherscan.io/api?module=gastracker&action=gasestimate&gasprice=${gasPrice}&apikey=${process.env.ETHERSCAN_API_KEY}`;
+  //     const response = await fetch(url);
+  //     const data = await response.json();
+  //     if (data) {
+  //       const time = data.result;
+  //       console.log(`estimatedTime: ${time} seconds`);
+  //       return `estimatedTime: ${time}seconds`;
+  //     } else {
+  //       console.log("Error");
+  //       return "Error";
+  //     }
+  //   },
+  // });
+
+  const fetchGasOracle = new DynamicTool({
+    name: "fetchGasOracle",
+    description: fetchGasOracleDescription,
+    func: async () => {
+      console.log("Triggered fetchGasOracle funciton");
+      const url = `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${process.env.ETHERSCAN_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data) {
+        const lastBlock = parseInt(data.result.LastBlock, 16);
+        const safeGasPrice = data.result.SafeGasPrice;
+        const proposeGasPrice = data.result.ProposeGasPrice;
+        const fastGasPrice = data.result.FastGasPrice;
+        const suggestBaseFee = data.result.SuggestBaseFee;
+        const moreInfo = `https://etherscan.io/gastracker`;
+        const caution = "The data could not be the latest";
+        console.log(
+          `lastBlock: ${lastBlock} safeGasPrice: ${safeGasPrice}, proposeGasPrice: ${proposeGasPrice}, fastGasPrice: ${fastGasPrice}, suggestBaseFee: ${suggestBaseFee}`
+        );
+        return `lastBlock: ${lastBlock} safeGasPrice: ${safeGasPrice}, proposeGasPrice: ${proposeGasPrice}, fastGasPrice: ${fastGasPrice}, suggestBaseFee: ${suggestBaseFee}, caution: ${caution}, moreInfo: ${moreInfo}`;
+      } else {
+        return "Error";
+      }
+    },
+  });
+
   const fetchWalletData = new DynamicTool({
     name: "fetchWalletData",
     description: fetchWalletDataDescription,
@@ -190,6 +246,7 @@ export async function POST(req: Request, res: Response) {
     fetchContract,
     fetchTransaction,
     fetchLatestBlockNumber,
+    fetchGasOracle,
   ];
 
   const executor = await initializeAgentExecutorWithOptions(tools, model, {
