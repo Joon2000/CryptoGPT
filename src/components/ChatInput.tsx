@@ -53,7 +53,7 @@ const ChatInput: FC<ChatInputProps> = ({ className, ...props }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt: messages[messages.length - 1].text,
+          message: messages[messages.length - 1].text,
           walletData: walletData,
           sessionId: sessionId || newSessionId,
         }),

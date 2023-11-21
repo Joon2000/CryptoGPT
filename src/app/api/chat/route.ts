@@ -22,7 +22,7 @@ import {
 import { formatEther } from "viem";
 
 export async function POST(req: Request, res: Response) {
-  const { prompt, walletData, sessionId } = await req.json();
+  const { message, walletData, sessionId } = await req.json();
 
   const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
   await client.connect();
@@ -257,7 +257,7 @@ export async function POST(req: Request, res: Response) {
     },
   });
 
-  const input = prompt;
+  const input = message;
 
   const result = await executor.run(input);
 
