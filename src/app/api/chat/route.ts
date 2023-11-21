@@ -107,7 +107,7 @@ export async function POST(req: Request, res: Response) {
       if (data) {
         const creator = data.result[0].contractCreator.toString();
         const txHash = data.result[0].txHash.toString();
-        const moreInfo = `https://etherscan.io/tx/${address}`;
+        const moreInfo = `https://etherscan.io/tx/${txHash}`;
         console.log("creator: ", creator, ", txHash: ", txHash);
         return `contactcreator: ${creator}, txHash: ${txHash}, info: ${moreInfo}`;
       } else {
